@@ -43,7 +43,7 @@
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
+uint32_t freq = 1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,12 +95,23 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
+  void software_pwm(uint16_t frequency, uint8_t duty_cycle)
+    {
+  	  uint32_t period_ms = 1000 / frequency;
+  	  uint32_t on_time = (period_ms * duty_cycle) / 100;
+  	  uint32_t off_time = period_ms - on_time;
+  	  HAL_GPIO_WritePin(GPIOA, LD2_Pin, GPIO_PIN_SET);
+  	  HAL_Delay(on_time);
+  	  HAL_GPIO_WritePin(GPIOA, LD2_Pin, GPIO_PIN_RESET);
+  	  HAL_Delay(off_time);
+    }
+    while (1)
+    {
+  	  software_pwm(freq, 50);
+      /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
-  }
+      /* USER CODE BEGIN 3 */
+    }
   /* USER CODE END 3 */
 }
 
@@ -222,13 +233,27 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	  if(GPIO_Pin == GPIO_PIN_13) {
+		  freq*=10;
+		  if(freq>=1000){
+			  freq=1;
+		  }
+	  } else {
+		  __NOP();
+	  }
+}
 /* USER CODE END 4 */
 
 /**
